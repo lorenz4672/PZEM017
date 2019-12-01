@@ -399,17 +399,17 @@ bool PZEM004Tv30::updateValues()
     _currentValues.current = ((uint32_t)response[5] << 8 | // Raw current in 0.001A
                               (uint32_t)response[6] |
                               (uint32_t)response[7] << 24 |
-                              (uint32_t)response[8] << 16) / 100.0;
+                              (uint32_t)response[8] << 16) / 10000.0/1000.0/2.0;
 
     _currentValues.power =   ((uint32_t)response[9] << 8 | // Raw power in 0.1W
                               (uint32_t)response[10] |
                               (uint32_t)response[11] << 24 |
-                              (uint32_t)response[12] << 16) / 100.0;
+                              (uint32_t)response[12] << 16) / 10000.0/10/2.0;
 
     _currentValues.energy =  ((uint32_t)response[13] << 8 | // Raw Energy in 1Wh
                               (uint32_t)response[14] |
                               (uint32_t)response[15] << 24 |
-                              (uint32_t)response[16] << 16) / 10.0;
+                              (uint32_t)response[16] << 16) / 10000.0;
 
     // _currentValues.frequeny =((uint32_t)response[17] << 8 | // Raw Frequency in 0.1Hz
     //                           (uint32_t)response[18]) / 10.0;
