@@ -2,39 +2,44 @@
 
 #include "PZEM004Tv30.h"
 
+/* Hardware Serial3 is only available on certain boards.
+ * For example the Arduino MEGA 2560
+*/
 PZEM004Tv30 pzem(&Serial3);
 
 void setup() {
   Serial.begin(115200);
-
-  Serial.print("Reset Energy");
-  pzem.resetEnergy();
-
-
-  Serial.print("Set address to 0x42");
-  pzem.setAddress(0x42);
 }
 
 void loop() {
-  float volt = pzem.voltage();
-  Serial.print("Voltage: ");
-  Serial.print(volt);
-  Serial.println("V");
+    float voltage = pzem.voltage();
+    if(!isnan(voltage)){
+        Serial.print("Voltage: "); Serial.print(voltage); Serial.println("V");
+    } else {
+        Serial.println("Error reading voltage");
+    }
 
-  float cur = pzem.current();
-  Serial.print("Current: ");
-  Serial.print(cur);
-  Serial.println("A");
+    float current = pzem.current();
+    if(!isnan(current)){
+        Serial.print("Current: "); Serial.print(current); Serial.println("A");
+    } else {
+        Serial.println("Error reading current");
+    }
 
-  float powe = pzem.power();
-  Serial.print("Power: ");
-  Serial.print(powe);
-  Serial.println("W");
+    float power = pzem.power();
+    if(!isnan(power)){
+        Serial.print("Power: "); Serial.print(power); Serial.println("W");
+    } else {
+        Serial.println("Error reading power");
+    }
 
-  float ener = pzem.energy();
-  Serial.print("Energy: ");
-  Serial.print(ener,3);
-  Serial.println("kWh");
+    float energy = pzem.energy();
+    if(!isnan(energy)){
+        Serial.print("Energy: "); Serial.print(energy,3); Serial.println("kWh");
+    } else {
+        Serial.println("Error reading energy");
+    }
 
-  delay(1000);
+    Serial.println();
+    delay(2000);
 }

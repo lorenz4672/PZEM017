@@ -47,11 +47,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define UPDATE_TIME     200
 
 #define RESPONSE_SIZE 32
-#define READ_TIMEOUT 100
+#define READ_TIMEOUT 200
 
 #define PZEM_BAUD_RATE 9600
 
-//HardwareSerial Serial
+extern HardwareSerial Serial3;
 
 
 
@@ -100,7 +100,7 @@ PZEM004Tv30::PZEM004Tv30(uint8_t receivePin, uint8_t transmitPin, uint8_t addr)
 */
 PZEM004Tv30::PZEM004Tv30(HardwareSerial* port, uint8_t addr)
 {
-    port->begin(PZEM_BAUD_RATE);
+    port->begin(PZEM_BAUD_RATE,SERIAL_8N2);
     this->_serial = port;
     this->_isSoft = false;
     init(addr);
@@ -207,7 +207,15 @@ float PZEM004Tv30::pf()
 
     return _currentValues.pf;
 }
+void printHex(int num, int precision) {
+     char tmp[16];
+     char format[128];
 
+     sprintf(format, "%%.%dX", precision);
+
+     sprintf(tmp, format, num);
+     Serial.println(tmp);
+}
 /*!
  * PZEM004Tv30::sendCmd8
  *
@@ -240,7 +248,11 @@ bool PZEM004Tv30::sendCmd8(uint8_t cmd, uint16_t rAddr, uint16_t val, bool check
     sendBuffer[5] = (val) & 0xFF;            // Set low byte =//=
 
     setCRC(sendBuffer, 8);                   // Set CRC of frame
-
+    Serial.println("WriteBuffer: ");
+    for(uint8_t u = 0; u < 8; u++){
+        printHex(sendBuffer[u],2);
+    //Serial.println(sendBuffer[u],HEX);
+    }
     _serial->write(sendBuffer, 8); // send frame
 
     if(check) {
@@ -371,10 +383,10 @@ bool PZEM004Tv30::updateValues()
     }
 
     // Read 10 registers starting at 0x00 (no check)
-    sendCmd8(CMD_RIR, 0x00, 0x0A, false);
+    sendCmd8(CMD_RIR, 0x00, 0x08, false);
 
 
-    if(recieve(response, 25) != 25){ // Something went wrong
+    if(recieve(response, 15) != 15){ // Something went wrong
         return false;
     }
 
@@ -382,31 +394,31 @@ bool PZEM004Tv30::updateValues()
 
     // Update the current values
     _currentValues.voltage = ((uint32_t)response[3] << 8 | // Raw voltage in 0.1V
-                              (uint32_t)response[4])/10.0;
+                              (uint32_t)response[4])/100.0;
 
     _currentValues.current = ((uint32_t)response[5] << 8 | // Raw current in 0.001A
                               (uint32_t)response[6] |
                               (uint32_t)response[7] << 24 |
-                              (uint32_t)response[8] << 16) / 1000.0;
+                              (uint32_t)response[8] << 16) / 100.0;
 
     _currentValues.power =   ((uint32_t)response[9] << 8 | // Raw power in 0.1W
                               (uint32_t)response[10] |
                               (uint32_t)response[11] << 24 |
-                              (uint32_t)response[12] << 16) / 10.0;
+                              (uint32_t)response[12] << 16) / 100.0;
 
     _currentValues.energy =  ((uint32_t)response[13] << 8 | // Raw Energy in 1Wh
                               (uint32_t)response[14] |
                               (uint32_t)response[15] << 24 |
-                              (uint32_t)response[16] << 16) / 1000.0;
+                              (uint32_t)response[16] << 16) / 10.0;
 
-    _currentValues.frequeny =((uint32_t)response[17] << 8 | // Raw Frequency in 0.1Hz
-                              (uint32_t)response[18]) / 10.0;
+    // _currentValues.frequeny =((uint32_t)response[17] << 8 | // Raw Frequency in 0.1Hz
+    //                           (uint32_t)response[18]) / 10.0;
 
-    _currentValues.pf =      ((uint32_t)response[19] << 8 | // Raw pf in 0.01
-                              (uint32_t)response[20])/100.0;
+    // _currentValues.pf =      ((uint32_t)response[19] << 8 | // Raw pf in 0.01
+    //                           (uint32_t)response[20])/100.0;
 
-    _currentValues.alarms =  ((uint32_t)response[21] << 8 | // Raw alarm value
-                              (uint32_t)response[22]);
+    // _currentValues.alarms =  ((uint32_t)response[21] << 8 | // Raw alarm value
+    //                           (uint32_t)response[22]);
 
     // Record current time as _lastRead
     _lastRead = millis();
@@ -451,6 +463,7 @@ bool PZEM004Tv30::resetEnergy(){
 */
 uint16_t PZEM004Tv30::recieve(uint8_t *resp, uint16_t len)
 {
+    //Serial.println(*resp);
     #ifdef PZEM004_SOFTSERIAL
         if(_isSoft)
             ((SoftwareSerial *)_serial)->listen(); // Start software serial listen
@@ -466,13 +479,18 @@ uint16_t PZEM004Tv30::recieve(uint8_t *resp, uint16_t len)
 
             resp[index++] = c;
         }
-        yield();	// do background netw tasks while blocked for IO (prevents ESP watchdog trigger)
+        //yield();	// do background netw tasks while blocked for IO (prevents ESP watchdog trigger)
+    }
+    Serial.println("ReadBuffer: ");
+    for(uint8_t z = 0; z < 8; z++){
+        printHex(resp[z],2);
     }
 
-    // Check CRC with the number of bytes read
-    if(!checkCRC(resp, index)){
-        return 0;
-    }
+    ////Check CRC with the number of bytes read
+    // if(!checkCRC(resp, index)){
+    //     Serial.println("CRC Wrong");
+    //     return 0;
+    // }
 
     return index;
 }
@@ -515,6 +533,12 @@ void PZEM004Tv30::setCRC(uint8_t *buf, uint16_t len){
     // Write high and low byte to last two positions
     buf[len - 2] = crc & 0xFF; // Low byte first
     buf[len - 1] = (crc >> 8) & 0xFF; // High byte second
+    //buf[len - 2] = 0xF1; // Low byte first
+   // buf[len - 1] = 0xCC; // High byte second
+    Serial.println("CRC:");
+    printHex((crc & 0xFF),2);
+    printHex(((crc >> 8) & 0xFF),2);
+
 }
 
 
@@ -570,14 +594,20 @@ uint16_t PZEM004Tv30::CRC16(const uint8_t *data, uint16_t len)
 {
     uint8_t nTemp; // CRC table index
     uint16_t crc = 0xFFFF; // Default value
-
-    while (len--)
-    {
-        nTemp = *data++ ^ crc;
-        crc >>= 8;
-        crc ^= (uint16_t)pgm_read_word(&crcTable[nTemp]);
+  for (int pos = 0; pos < len; pos++) {
+    crc ^= (uint16_t)data[pos];          // XOR byte into least sig. byte of crc
+  
+    for (int i = 8; i != 0; i--) {    // Loop over each bit
+      if ((crc & 0x0001) != 0) {      // If the LSB is set
+        crc >>= 1;                    // Shift right and XOR 0xA001
+        crc ^= 0xA001;
+      }
+      else                            // Else LSB is not set
+        crc >>= 1;                    // Just shift right
     }
-    return crc;
+  }
+  // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
+  return crc;  
 }
 
 /*!
