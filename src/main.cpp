@@ -14,28 +14,36 @@ void setup() {
 void loop() {
     float voltage = pzem.voltage();
     if(!isnan(voltage)){
-        Serial.print("Voltage: "); Serial.print(voltage); Serial.println("V");
+        Serial.print("Voltage: "); 
+        Serial.print(voltage); 
+        Serial.println("V");
     } else {
         Serial.println("Error reading voltage");
     }
 
     float current = pzem.current();
     if(!isnan(current)){
-        Serial.print("Current: "); Serial.print(current); Serial.println("A");
+        Serial.print("Current: "); 
+        Serial.print(current); 
+        Serial.println("A");
     } else {
         Serial.println("Error reading current");
     }
 
     float power = pzem.power();
     if(!isnan(power)){
-        Serial.print("Power: "); Serial.print(power); Serial.println("W");
+        Serial.print("Power: "); 
+        Serial.print(power); 
+        Serial.println("W");
     } else {
         Serial.println("Error reading power");
     }
 
     float energy = pzem.energy();
     if(!isnan(energy)){
-        Serial.print("Energy: "); Serial.print(energy,3); Serial.println("kWh");
+        Serial.print("Energy: "); 
+        Serial.print(energy,3); 
+        Serial.println("kWh");
     } else {
         Serial.println("Error reading energy");
     }

@@ -384,11 +384,11 @@ bool PZEM004Tv30::updateValues()
 
     // Read 10 registers starting at 0x00 (no check)
     sendCmd8(CMD_RIR, 0x00, 0x08, false);
+recieve(response, 21);
 
-
-    if(recieve(response, 15) != 15){ // Something went wrong
-        return false;
-    }
+    // if(){ // Something went wrong
+    //     return false;
+    // }
 
 
 
@@ -399,12 +399,12 @@ bool PZEM004Tv30::updateValues()
     _currentValues.current = ((uint32_t)response[5] << 8 | // Raw current in 0.001A
                               (uint32_t)response[6] |
                               (uint32_t)response[7] << 24 |
-                              (uint32_t)response[8] << 16) / 10000.0/1000.0/2.0;
+                              (uint32_t)response[8] << 16) / 10000.0/1000.0;
 
     _currentValues.power =   ((uint32_t)response[9] << 8 | // Raw power in 0.1W
                               (uint32_t)response[10] |
                               (uint32_t)response[11] << 24 |
-                              (uint32_t)response[12] << 16) / 10000.0/10/2.0;
+                              (uint32_t)response[12] << 16) / 10000.0/10;
 
     _currentValues.energy =  ((uint32_t)response[13] << 8 | // Raw Energy in 1Wh
                               (uint32_t)response[14] |
@@ -482,15 +482,15 @@ uint16_t PZEM004Tv30::recieve(uint8_t *resp, uint16_t len)
         //yield();	// do background netw tasks while blocked for IO (prevents ESP watchdog trigger)
     }
     Serial.println("ReadBuffer: ");
-    for(uint8_t z = 0; z < 8; z++){
+    for(uint8_t z = 0; z < 21; z++){
         printHex(resp[z],2);
     }
 
-    ////Check CRC with the number of bytes read
-    // if(!checkCRC(resp, index)){
-    //     Serial.println("CRC Wrong");
-    //     return 0;
-    // }
+    //Check CRC with the number of bytes read
+    if(!checkCRC(resp, index)){
+        Serial.println("CRC Wrong");
+        return 0;
+    }
 
     return index;
 }
