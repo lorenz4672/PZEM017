@@ -20,7 +20,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 
-#include "PZEM004Tv30.h"
+#include "PZEM017.h"
 #include <stdio.h>
 
 #define REG_VOLTAGE     0x0000
@@ -51,13 +51,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define READ_TIMEOUT 200
 
 #define PZEM_BAUD_RATE 9600
-#define DEBUGMODE
+//#define DEBUGMODE
 
 extern HardwareSerial Serial3;
 
 
 /*!
- * PZEM004Tv30::PZEM004Tv30
+ * PZEM017::PZEM017
  *
  * Software Serial constructor
  *
@@ -65,8 +65,8 @@ extern HardwareSerial Serial3;
  * @param transmitPin TX pin
  * @param addr Slave address of device
 */
-#if defined(PZEM004_SOFTSERIAL)
-PZEM004Tv30::PZEM004Tv30(uint8_t receivePin, uint8_t transmitPin, uint8_t addr)
+#if defined(PZEM017_SOFTSERIAL)
+PZEM017::PZEM017(uint8_t receivePin, uint8_t transmitPin, uint8_t addr)
 {
     SoftwareSerial *port = new SoftwareSerial(receivePin, transmitPin);
     port->begin(PZEM_BAUD_RATE);
@@ -77,14 +77,14 @@ PZEM004Tv30::PZEM004Tv30(uint8_t receivePin, uint8_t transmitPin, uint8_t addr)
 #endif
 
 /*!
- * PZEM004Tv30::PZEM004Tv30
+ * PZEM017::PZEM017
  *
  * Hardware serial constructor
  *
  * @param port Hardware serial to use
  * @param addr Slave address of device
 */
-PZEM004Tv30::PZEM004Tv30(HardwareSerial* port, uint8_t addr)
+PZEM017::PZEM017(HardwareSerial* port, uint8_t addr)
 {
     port->begin(PZEM_BAUD_RATE,SERIAL_8N2);
     this->_serial = port;
@@ -93,25 +93,25 @@ PZEM004Tv30::PZEM004Tv30(HardwareSerial* port, uint8_t addr)
 }
 
 /*!
- * PZEM004Tv30::~PZEM004Tv30
+ * PZEM017::~PZEM017
  *
  * Destructor deleting software serial
  *
 */
-PZEM004Tv30::~PZEM004Tv30()
+PZEM017::~PZEM017()
 {
     if(_isSoft)
         delete this->_serial;
 }
 
 /*!
- * PZEM004Tv30::voltage
+ * PZEM017::voltage
  *
  * Get line voltage in Volts
  *
  * @return current L-N volage
 */
-float PZEM004Tv30::voltage()
+float PZEM017::voltage()
 {
     if(!updateValues()) // Update vales if necessary
         return NAN; // Update did not work, return NAN
@@ -120,13 +120,13 @@ float PZEM004Tv30::voltage()
 }
 
 /*!
- * PZEM004Tv30::current
+ * PZEM017::current
  *
  * Get line in Amps
  *
  * @return line current
 */
-float PZEM004Tv30::current()
+float PZEM017::current()
 {
     if(!updateValues())// Update vales if necessary
         return NAN; // Update did not work, return NAN
@@ -135,13 +135,13 @@ float PZEM004Tv30::current()
 }
 
 /*!
- * PZEM004Tv30::power
+ * PZEM017::power
  *
  * Get Active power in W
  *
  * @return active power in W
 */
-float PZEM004Tv30::power()
+float PZEM017::power()
 {
     if(!updateValues()) // Update vales if necessary
         return NAN; // Update did not work, return NAN
@@ -150,13 +150,13 @@ float PZEM004Tv30::power()
 }
 
 /*!
- * PZEM004Tv30::energy
+ * PZEM017::energy
  *
  * Get Active energy in kWh since last reset
  *
  * @return active energy in kWh
 */
-float PZEM004Tv30::energy()
+float PZEM017::energy()
 {
     if(!updateValues()) // Update vales if necessary
         return NAN; // Update did not work, return NAN
@@ -165,13 +165,13 @@ float PZEM004Tv30::energy()
 }
 
 /*!
- * PZEM004Tv30::frequeny
+ * PZEM017::frequeny
  *
  * Get current line frequency in Hz
  *
  * @return line frequency in Hz
 */
-bool PZEM004Tv30::VoltHighAlarm()
+bool PZEM017::VoltHighAlarm()
 {
     if(_currentValues.VoltHighAlarm==0xFFFF)
         return true;
@@ -180,13 +180,13 @@ bool PZEM004Tv30::VoltHighAlarm()
 }
 
 /*!
- * PZEM004Tv30::pf
+ * PZEM017::pf
  *
  * Get power factor of load
  *
  * @return load power factor
 */
-bool PZEM004Tv30::VoltLowAlarm()
+bool PZEM017::VoltLowAlarm()
 {
     if(_currentValues.VoltLowAlarm==0xFFFF)
         return true;
@@ -203,7 +203,7 @@ void printHex(int num, int precision) {
      Serial.println(tmp);
 }
 /*!
- * PZEM004Tv30::sendCmd8
+ * PZEM017::sendCmd8
  *
  * Prepares the 8 byte command buffer and sends
  *
@@ -214,7 +214,7 @@ void printHex(int num, int precision) {
  *
  * @return success
 */
-bool PZEM004Tv30::sendCmd8(uint8_t cmd, uint16_t rAddr, uint16_t val, bool check, uint16_t slave_addr){
+bool PZEM017::sendCmd8(uint8_t cmd, uint16_t rAddr, uint16_t val, bool check, uint16_t slave_addr){
     uint8_t sendBuffer[8]; // Send buffer
     uint8_t respBuffer[8]; // Response buffer (only used when check is true)
 
@@ -259,7 +259,7 @@ bool PZEM004Tv30::sendCmd8(uint8_t cmd, uint16_t rAddr, uint16_t val, bool check
 
 
 /*!
- * PZEM004Tv30::setAddress
+ * PZEM017::setAddress
  *
  * Set a new device address and update the device
  * WARNING - should be used to set up devices once.
@@ -269,7 +269,7 @@ bool PZEM004Tv30::sendCmd8(uint8_t cmd, uint16_t rAddr, uint16_t val, bool check
  *
  * @return success
 */
-bool PZEM004Tv30::setAddress(uint8_t addr)
+bool PZEM017::setAddress(uint8_t addr)
 {
     if(addr < 0x01 || addr > 0xF7) // sanity check
         return false;
@@ -284,19 +284,19 @@ bool PZEM004Tv30::setAddress(uint8_t addr)
 }
 
 /*!
- * PZEM004Tv30::getAddress
+ * PZEM017::getAddress
  *
  * Get the current device address
  *
  * @return address
 */
-uint8_t PZEM004Tv30::getAddress()
+uint8_t PZEM017::getAddress()
 {
     return _addr;
 }
 
 /*!
- * PZEM004Tv30::setHIVoltageAlarm
+ * PZEM017::setHIVoltageAlarm
  *
  * Set High Volt alarm threshold in volts
  *
@@ -304,7 +304,7 @@ uint8_t PZEM004Tv30::getAddress()
  *
  * @return success
 */
-bool PZEM004Tv30::setHIVoltageAlarm(uint16_t volt)
+bool PZEM017::setHIVoltageAlarm(uint16_t volt)
 {
     volt= volt*100;
     if (volt > 30000){ // Sanitych check
@@ -321,7 +321,7 @@ bool PZEM004Tv30::setHIVoltageAlarm(uint16_t volt)
     return true;
 }
 /*!
- * PZEM004Tv30::setLowVoltageAlarm
+ * PZEM017::setLowVoltageAlarm
  *
  * Set Low Volt alarm threshold in volts
  *
@@ -329,7 +329,7 @@ bool PZEM004Tv30::setHIVoltageAlarm(uint16_t volt)
  *
  * @return success
 */
-bool PZEM004Tv30::setLOWVoltageAlarm(uint16_t volt)
+bool PZEM017::setLOWVoltageAlarm(uint16_t volt)
 {
     volt= volt*100;
     if (volt > 30000){ // Sanitych check
@@ -344,7 +344,7 @@ bool PZEM004Tv30::setLOWVoltageAlarm(uint16_t volt)
     }
     return true;
 }
-bool PZEM004Tv30::setCurrentShunt(uint16_t shuntValue)
+bool PZEM017::setCurrentShunt(uint16_t shuntValue)
 {
         if(!sendCmd8(CMD_RSR, WREG_CURRENT_RANGE,shuntValue, true))
         return false;
@@ -352,7 +352,7 @@ bool PZEM004Tv30::setCurrentShunt(uint16_t shuntValue)
     Serial.println("Set Shunt Value");
     return true;
 }
-bool PZEM004Tv30::getSlaveParameters()
+bool PZEM017::getSlaveParameters()
 {
     Serial.println("SlaveParameters:");
     static uint8_t responseParameter[15];
@@ -385,14 +385,14 @@ bool PZEM004Tv30::getSlaveParameters()
     return true;
 }
 /*!
- * PZEM004Tv30::getPowerAlarm
+ * PZEM017::getPowerAlarm
  *
  * Is the power alarm set
  *
  *
  * @return arlam triggerd
 */
-bool PZEM004Tv30::getPowerAlarm()
+bool PZEM017::getPowerAlarm()
 {
     if(!updateValues()) // Update vales if necessary
         return NAN; // Update did not work, return NAN
@@ -401,7 +401,7 @@ bool PZEM004Tv30::getPowerAlarm()
 }
 
 /*!
- * PZEM004Tv30::init
+ * PZEM017::init
  *
  * initialization common to all consturctors
  *
@@ -409,7 +409,7 @@ bool PZEM004Tv30::getPowerAlarm()
  *
  * @return success
 */
-void PZEM004Tv30::init(uint8_t addr){
+void PZEM017::init(uint8_t addr){
     if(addr < 0x01 || addr > 0xF8) // Sanity check of address
         addr = PZEM_DEFAULT_ADDR;
     _addr = addr;
@@ -421,13 +421,13 @@ void PZEM004Tv30::init(uint8_t addr){
 
 
 /*!
- * PZEM004Tv30::updateValues
+ * PZEM017::updateValues
  *
  * Read all registers of device and update the local values
  *
  * @return success
 */
-bool PZEM004Tv30::updateValues()
+bool PZEM017::updateValues()
 {
     //static uint8_t buffer[] = {0x00, CMD_RIR, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x00};
     static uint8_t response[25];
@@ -479,13 +479,13 @@ recieve(response, 21);
 
 
 /*!
- * PZEM004Tv30::resetEnergy
+ * PZEM017::resetEnergy
  *
  * Reset the Energy counter on the device
  *
  * @return success
 */
-bool PZEM004Tv30::resetEnergy(){
+bool PZEM017::resetEnergy(){
     uint8_t buffer[] = {0x00, CMD_REST, 0x00, 0x00};
     uint8_t reply[5];
     buffer[0] = _addr;
@@ -503,7 +503,7 @@ bool PZEM004Tv30::resetEnergy(){
 }
 
 /*!
- * PZEM004Tv30::recieve
+ * PZEM017::recieve
  *
  * Receive data from serial with buffer limit and timeout
  *
@@ -512,10 +512,10 @@ bool PZEM004Tv30::resetEnergy(){
  *
  * @return number of bytes read
 */
-uint16_t PZEM004Tv30::recieve(uint8_t *resp, uint16_t len)
+uint16_t PZEM017::recieve(uint8_t *resp, uint16_t len)
 {
     //Serial.println(*resp);
-    #ifdef PZEM004_SOFTSERIAL
+    #ifdef PZEM017_SOFTSERIAL
         if(_isSoft)
             ((SoftwareSerial *)_serial)->listen(); // Start software serial listen
     #endif
@@ -548,7 +548,7 @@ uint16_t PZEM004Tv30::recieve(uint8_t *resp, uint16_t len)
 }
 
 /*!
- * PZEM004Tv30::checkCRC
+ * PZEM017::checkCRC
  *
  * Performs CRC check of the buffer up to len-2 and compares check sum to last two bytes
  *
@@ -557,7 +557,7 @@ uint16_t PZEM004Tv30::recieve(uint8_t *resp, uint16_t len)
  *
  * @return is the buffer check sum valid
 */
-bool PZEM004Tv30::checkCRC(const uint8_t *buf, uint16_t len){
+bool PZEM017::checkCRC(const uint8_t *buf, uint16_t len){
     if(len <= 2) // Sanity check
         return false;
 
@@ -567,7 +567,7 @@ bool PZEM004Tv30::checkCRC(const uint8_t *buf, uint16_t len){
 
 
 /*!
- * PZEM004Tv30::setCRC
+ * PZEM017::setCRC
  *
  * Set last two bytes of buffer to CRC16 of the buffer up to byte len-2
  * Buffer must be able to hold at least 3 bytes
@@ -576,7 +576,7 @@ bool PZEM004Tv30::checkCRC(const uint8_t *buf, uint16_t len){
  * @param[in] len  Length of the respBuffer including 2 bytes for CRC
  *
 */
-void PZEM004Tv30::setCRC(uint8_t *buf, uint16_t len){
+void PZEM017::setCRC(uint8_t *buf, uint16_t len){
     if(len <= 2) // Sanity check
         return;
 
@@ -633,7 +633,7 @@ static const uint16_t crcTable[] PROGMEM = {
 
 
 /*!
- * PZEM004Tv30::CRC16
+ * PZEM017::CRC16
  *
  * Calculate the CRC16-Modbus for a buffer
  * Based on https://www.modbustools.com/modbus_crc16.html
@@ -643,7 +643,7 @@ static const uint16_t crcTable[] PROGMEM = {
  *
  * @return Calculated CRC
 */
-uint16_t PZEM004Tv30::CRC16(const uint8_t *data, uint16_t len)
+uint16_t PZEM017::CRC16(const uint8_t *data, uint16_t len)
 {
     uint8_t nTemp; // CRC table index
     uint16_t crc = 0xFFFF; // Default value
@@ -664,14 +664,14 @@ uint16_t PZEM004Tv30::CRC16(const uint8_t *data, uint16_t len)
 }
 
 /*!
- * PZEM004Tv30::search
+ * PZEM017::search
  *
  * Search for available devices. This should be used only for debugging!
  * Prints any found device addresses on the bus.
- * Can be disabled by defining PZEM004T_DISABLE_SEARCH
+ * Can be disabled by defining PZEM017T_DISABLE_SEARCH
 */
-void PZEM004Tv30::search(){
-#if ( not defined(PZEM004T_DISABLE_SEARCH))
+void PZEM017::search(){
+#if ( not defined(PZEM017T_DISABLE_SEARCH))
     static uint8_t response[7];
     for(uint16_t addr = 0x01; addr <= 0xF8; addr++){
         //Serial.println(addr);

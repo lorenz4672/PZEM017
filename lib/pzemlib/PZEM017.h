@@ -24,7 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * PZEM-004Tv30.h
  *
  * Interface library for the upgraded version of PZEM-004T v3.0
- * Based on the PZEM004T library by @olehs https://github.com/olehs/PZEM004T
+ * Based on the PZEM017T library by @olehs https://github.com/olehs/PZEM017T
  *
  * Author: Jakub Mandula https://github.com/mandulaj
  *
@@ -32,8 +32,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 
-#ifndef PZEM004TV30_H
-#define PZEM004TV30_H
+#ifndef PZEM017_H
+#define PZEM017_H
 
 
 
@@ -43,12 +43,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "WProgram.h"
 #endif
 
-// #define PZEM004_NO_SWSERIAL
-#if (not defined(PZEM004_NO_SWSERIAL)) && (defined(__AVR__) || defined(ESP8266) && (not defined(ESP32)))
-#define PZEM004_SOFTSERIAL
+// #define PZEM017_NO_SWSERIAL
+#if (not defined(PZEM017_NO_SWSERIAL)) && (defined(__AVR__) || defined(ESP8266) && (not defined(ESP32)))
+#define PZEM017_SOFTSERIAL
 #endif
 
-#if defined(PZEM004_SOFTSERIAL)
+#if defined(PZEM017_SOFTSERIAL)
 #include <SoftwareSerial.h>
 #endif
 
@@ -56,14 +56,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PZEM_DEFAULT_ADDR    0x01
 
 
-class PZEM004Tv30
+class PZEM017
 {
 public:
-#if defined(PZEM004_SOFTSERIAL)
-    PZEM004Tv30(uint8_t receivePin, uint8_t transmitPin, uint8_t addr=PZEM_DEFAULT_ADDR);
+#if defined(PZEM017_SOFTSERIAL)
+    PZEM017(uint8_t receivePin, uint8_t transmitPin, uint8_t addr=PZEM_DEFAULT_ADDR);
 #endif
-    PZEM004Tv30(HardwareSerial* port, uint8_t addr=PZEM_DEFAULT_ADDR);
-    ~PZEM004Tv30();
+    PZEM017(HardwareSerial* port, uint8_t addr=PZEM_DEFAULT_ADDR);
+    ~PZEM017();
 
 
     float voltage();
@@ -72,9 +72,6 @@ public:
     float energy();
     bool VoltHighAlarm();
     bool VoltLowAlarm();
-
-
-
 
     bool setAddress(uint8_t addr);
     uint8_t getAddress();
@@ -128,4 +125,4 @@ private:
     uint16_t CRC16(const uint8_t *data, uint16_t len); // Calculate CRC of buffer
 };
 
-#endif // PZEM004T_H
+#endif // PZEM017T_H

@@ -14,8 +14,8 @@ void setup() {
 
 void loop() {
 
-    pzem.setHIVoltageAlarm(18);
-    pzem.setLOWVoltageAlarm(10);
+    //pzem.setHIVoltageAlarm(18);
+    //pzem.setLOWVoltageAlarm(10);
     pzem.getSlaveParameters();
 
 
