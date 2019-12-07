@@ -86,5 +86,5 @@ void loop() {
 ```
 
 ***
-Thank you to [@olehs](https://github.com/olehs) and [@mandulaj]https://github.com/mandulaj for inspiring this library.
+Thank you to [@olehs](https://github.com/olehs) and [@mandulaj](https://github.com/mandulaj) for inspiring this library.
 
