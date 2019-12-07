@@ -70,18 +70,22 @@ public:
     float current();
     float power();
     float energy();
-    float frequency();
-    float pf();
+    bool VoltHighAlarm();
+    bool VoltLowAlarm();
+
+
 
 
     bool setAddress(uint8_t addr);
     uint8_t getAddress();
 
-    bool setPowerAlarm(uint16_t watts);
+    bool setLOWVoltageAlarm(uint16_t volt);
+    bool setHIVoltageAlarm(uint16_t volt);
     bool getPowerAlarm();
 
     bool resetEnergy();
-
+    bool getSlaveParameters();
+    bool setCurrentShunt(uint16_t shunt);
     void search();
 
 private:
@@ -96,10 +100,16 @@ private:
         float current;
         float power;
         float energy;
-        float frequeny;
-        float pf;
-        uint16_t alarms;
+        uint16_t VoltHighAlarm;
+        uint16_t VoltLowAlarm;
     }  _currentValues; // Measured values
+
+        struct {
+        float HIVoltTHR;
+        float LOWVoltTHR;
+        uint32_t MODBUS_ADDR;
+        uint32_t SHUNT_VAL;
+    }  _currentParameters; // Measured values
 
     uint64_t _lastRead; // Last time values were updated
 

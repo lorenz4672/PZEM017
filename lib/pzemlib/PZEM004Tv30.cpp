@@ -34,15 +34,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define REG_PF          0x0008
 #define REG_ALARM       0x0009
 
-#define CMD_RHR         0x03
+#define CMD_RSR         0x03
 #define CMD_RIR         0X04
 #define CMD_WSR         0x06
 #define CMD_CAL         0x41
 #define CMD_REST        0x42
 
-
-#define WREG_ALARM_THR   0x0001
+#define WREG_ALARM_VHI   0x0000
+#define WREG_ALARM_VLO   0x0001
 #define WREG_ADDR        0x0002
+#define WREG_CURRENT_RANGE   0x0003
 
 #define UPDATE_TIME     200
 
@@ -50,25 +51,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define READ_TIMEOUT 200
 
 #define PZEM_BAUD_RATE 9600
+#define DEBUGMODE
 
 extern HardwareSerial Serial3;
 
-
-
-#define DEBUG
-
-// Debugging function;
-void printBuf(uint8_t* buffer, uint16_t len){
-#ifdef DEBUG
-    for(uint16_t i = 0; i < len; i++){
-        char temp[6];
-        sprintf(temp, "%.2x ", buffer[i]);
-        Serial.print(temp);
-
-    }
-    Serial.println();
-#endif
-}
 
 /*!
  * PZEM004Tv30::PZEM004Tv30
@@ -185,12 +171,12 @@ float PZEM004Tv30::energy()
  *
  * @return line frequency in Hz
 */
-float PZEM004Tv30::frequency()
+bool PZEM004Tv30::VoltHighAlarm()
 {
-    if(!updateValues()) // Update vales if necessary
-        return NAN; // Update did not work, return NAN
+    if(_currentValues.VoltHighAlarm==0xFFFF)
+        return true;
 
-    return _currentValues.frequeny;
+    return false;
 }
 
 /*!
@@ -200,12 +186,12 @@ float PZEM004Tv30::frequency()
  *
  * @return load power factor
 */
-float PZEM004Tv30::pf()
+bool PZEM004Tv30::VoltLowAlarm()
 {
-    if(!updateValues()) // Update vales if necessary
-        return NAN; // Update did not work, return NAN
+    if(_currentValues.VoltLowAlarm==0xFFFF)
+        return true;
 
-    return _currentValues.pf;
+    return false;
 }
 void printHex(int num, int precision) {
      char tmp[16];
@@ -248,11 +234,13 @@ bool PZEM004Tv30::sendCmd8(uint8_t cmd, uint16_t rAddr, uint16_t val, bool check
     sendBuffer[5] = (val) & 0xFF;            // Set low byte =//=
 
     setCRC(sendBuffer, 8);                   // Set CRC of frame
-    Serial.println("WriteBuffer: ");
-    for(uint8_t u = 0; u < 8; u++){
-        printHex(sendBuffer[u],2);
-    //Serial.println(sendBuffer[u],HEX);
-    }
+    #ifdef DEBUGMODE
+        Serial.println("WriteBuffer: ");
+        for(uint8_t u = 0; u < 8; u++){
+            printHex(sendBuffer[u],2);
+        //Serial.println(sendBuffer[u],HEX);
+        }
+    #endif
     _serial->write(sendBuffer, 8); // send frame
 
     if(check) {
@@ -308,27 +296,94 @@ uint8_t PZEM004Tv30::getAddress()
 }
 
 /*!
- * PZEM004Tv30::setPowerAlarm
+ * PZEM004Tv30::setHIVoltageAlarm
  *
- * Set power alarm threshold in watts
+ * Set High Volt alarm threshold in volts
  *
- * @param[in] watts Alamr theshold
+ * @param[in] Volt Alarm Threshold
  *
  * @return success
 */
-bool PZEM004Tv30::setPowerAlarm(uint16_t watts)
+bool PZEM004Tv30::setHIVoltageAlarm(uint16_t volt)
 {
-    if (watts > 25000){ // Sanitych check
-        watts = 25000;
+    volt= volt*100;
+    if (volt > 30000){ // Sanitych check
+        volt = 30000;
     }
-
+    Serial.println("SetHIVoltageAlarm");
     // Write the watts threshold to the Alarm register
-    if(!sendCmd8(CMD_WSR, WREG_ALARM_THR, watts, true))
+    if(!sendCmd8(CMD_WSR, WREG_ALARM_VHI, volt, true))
+    {
+        Serial.println("Error:setHIVoltageAlarm");
         return false;
+    }
 
     return true;
 }
+/*!
+ * PZEM004Tv30::setLowVoltageAlarm
+ *
+ * Set Low Volt alarm threshold in volts
+ *
+ * @param[in] Volt Alarm Threshold
+ *
+ * @return success
+*/
+bool PZEM004Tv30::setLOWVoltageAlarm(uint16_t volt)
+{
+    volt= volt*100;
+    if (volt > 30000){ // Sanitych check
+        volt = 30000;
+    }
+    Serial.println("SetLOWVoltageAlarm");
+    // Write the watts threshold to the Alarm register
+    if(!sendCmd8(CMD_WSR, WREG_ALARM_VLO, volt, true))
+    {
+        Serial.println("Error:setLowVoltageAlarm");
+        return false;
+    }
+    return true;
+}
+bool PZEM004Tv30::setCurrentShunt(uint16_t shuntValue)
+{
+        if(!sendCmd8(CMD_RSR, WREG_CURRENT_RANGE,shuntValue, true))
+        return false;
 
+    Serial.println("Set Shunt Value");
+    return true;
+}
+bool PZEM004Tv30::getSlaveParameters()
+{
+    Serial.println("SlaveParameters:");
+    static uint8_t responseParameter[15];
+    sendCmd8(CMD_RSR, 0x00, 0x04, false);
+    recieve(responseParameter,13);
+    _currentParameters.HIVoltTHR =  ((uint32_t)responseParameter[3] << 8 | // Raw voltage in 0.1V
+                                    (uint32_t)responseParameter[4])/100.0;
+    _currentParameters.LOWVoltTHR =  ((uint32_t)responseParameter[5] << 8 | // Raw voltage in 0.1V
+                                    (uint32_t)responseParameter[6])/100.0;
+    _currentParameters.MODBUS_ADDR =  ((uint32_t)responseParameter[7] << 8 | // Raw voltage in 0.1V
+                                    (uint32_t)responseParameter[8]);
+    _currentParameters.SHUNT_VAL =  ((uint32_t)responseParameter[9] << 8 | // Raw voltage in 0.1V
+                                    (uint32_t)responseParameter[10]);
+
+     Serial.print("HighVoltageThreshold: "); 
+    Serial.print(_currentParameters.HIVoltTHR); 
+    Serial.println("V");
+    
+    Serial.print("LOWVoltageThreshold: "); 
+    Serial.print(_currentParameters.LOWVoltTHR); 
+    Serial.println("V"); 
+    
+    Serial.print("MODBUS-RTU Adress: "); 
+    printHex(_currentParameters.MODBUS_ADDR,4); 
+    Serial.println("");
+
+    Serial.print("Current Shunt: "); 
+    printHex(_currentParameters.SHUNT_VAL,4); 
+    Serial.println("");                                       
+    return true;
+}
 /*!
  * PZEM004Tv30::getPowerAlarm
  *
@@ -342,7 +397,7 @@ bool PZEM004Tv30::getPowerAlarm()
     if(!updateValues()) // Update vales if necessary
         return NAN; // Update did not work, return NAN
 
-    return _currentValues.alarms != 0x0000;
+    return _currentValues.VoltHighAlarm != 0x0000;
 }
 
 /*!
@@ -397,25 +452,21 @@ recieve(response, 21);
                               (uint32_t)response[4])/100.0;
 
     _currentValues.current = ((uint32_t)response[5] << 8 | // Raw current in 0.001A
-                              (uint32_t)response[6] |
-                              (uint32_t)response[7] << 24 |
-                              (uint32_t)response[8] << 16) / 10000.0/1000.0;
+                             (uint32_t)response[6])/100.0;
 
-    _currentValues.power =   ((uint32_t)response[9] << 8 | // Raw power in 0.1W
-                              (uint32_t)response[10] |
+    _currentValues.power =   ((uint32_t)response[7] << 8 | // Raw power in 0.1W
+                              (uint32_t)response[8])/100.0;
+
+    _currentValues.energy =  ((uint32_t)response[9] << 8 | // Raw Energy in 1Wh
+                              (uint32_t)response[10] << 16 |
                               (uint32_t)response[11] << 24 |
-                              (uint32_t)response[12] << 16) / 10000.0/10;
+                              (uint32_t)response[12]);
 
-    _currentValues.energy =  ((uint32_t)response[13] << 8 | // Raw Energy in 1Wh
-                              (uint32_t)response[14] |
-                              (uint32_t)response[15] << 24 |
-                              (uint32_t)response[16] << 16) / 10000.0;
+    _currentValues.VoltHighAlarm =((uint32_t)response[15] << 8 | // High Voltage Alarm
+                              (uint32_t)response[16]);
 
-    // _currentValues.frequeny =((uint32_t)response[17] << 8 | // Raw Frequency in 0.1Hz
-    //                           (uint32_t)response[18]) / 10.0;
-
-    // _currentValues.pf =      ((uint32_t)response[19] << 8 | // Raw pf in 0.01
-    //                           (uint32_t)response[20])/100.0;
+    _currentValues.VoltLowAlarm =((uint32_t)response[17] << 8 | // LOW voltage Alarm
+                              (uint32_t)response[18]);
 
     // _currentValues.alarms =  ((uint32_t)response[21] << 8 | // Raw alarm value
     //                           (uint32_t)response[22]);
@@ -481,14 +532,15 @@ uint16_t PZEM004Tv30::recieve(uint8_t *resp, uint16_t len)
         }
         //yield();	// do background netw tasks while blocked for IO (prevents ESP watchdog trigger)
     }
-    Serial.println("ReadBuffer: ");
-    for(uint8_t z = 0; z < 21; z++){
-        printHex(resp[z],2);
-    }
-
+    #ifdef DEBUGMODE
+        Serial.println("ReadBuffer: ");
+        for(uint8_t z = 0; z < len; z++){
+            printHex(resp[z],2);
+        }
+    #endif
     //Check CRC with the number of bytes read
     if(!checkCRC(resp, index)){
-        Serial.println("CRC Wrong");
+        Serial.println("CRC Error");
         return 0;
     }
 
@@ -535,10 +587,11 @@ void PZEM004Tv30::setCRC(uint8_t *buf, uint16_t len){
     buf[len - 1] = (crc >> 8) & 0xFF; // High byte second
     //buf[len - 2] = 0xF1; // Low byte first
    // buf[len - 1] = 0xCC; // High byte second
-    Serial.println("CRC:");
-    printHex((crc & 0xFF),2);
-    printHex(((crc >> 8) & 0xFF),2);
-
+    #ifdef DEBUGMODE
+        Serial.println("CRC:");
+        printHex((crc & 0xFF),2);
+        printHex(((crc >> 8) & 0xFF),2);
+    #endif
 }
 
 

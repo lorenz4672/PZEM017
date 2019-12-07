@@ -9,9 +9,16 @@ PZEM004Tv30 pzem(&Serial3);
 
 void setup() {
   Serial.begin(115200);
+  
 }
 
 void loop() {
+
+    pzem.setHIVoltageAlarm(18);
+    pzem.setLOWVoltageAlarm(10);
+    pzem.getSlaveParameters();
+
+
     float voltage = pzem.voltage();
     if(!isnan(voltage)){
         Serial.print("Voltage: "); 
@@ -43,9 +50,17 @@ void loop() {
     if(!isnan(energy)){
         Serial.print("Energy: "); 
         Serial.print(energy,3); 
-        Serial.println("kWh");
+        Serial.println("Wh");
     } else {
         Serial.println("Error reading energy");
+    }
+    if(pzem.VoltHighAlarm())
+    {
+        Serial.println("OverVoltage");
+    }
+    if(pzem.VoltLowAlarm())
+    {
+        Serial.println("UnderVoltage");
     }
 
     Serial.println();
