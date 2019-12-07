@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 Jakub Mandula
+Copyright (c) 2019 O. Lorenz
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -21,13 +21,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 /*
- * PZEM-004Tv30.h
+ * PZEM017.h
  *
- * Interface library for the upgraded version of PZEM-004T v3.0
- * Based on the PZEM017T library by @olehs https://github.com/olehs/PZEM017T
+ * Interface library for a different version: PZEM017 DC Energy Monitor
+ * Based on the PZEM004T library by @olehs https://github.com/olehs/PZEM017T
  *
- * Author: Jakub Mandula https://github.com/mandulaj
- *
+ * Author: O. Lorenz https://github.com/lorenz4672
+ * 
  *
 */
 

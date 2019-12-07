@@ -10,9 +10,8 @@
 * Reset Energy
 * 
 
-## Moduls:
+## Modules:
 * Uart to RS485 Bus, 3.3V version
-* 
 
 ### Example
 ```c++
@@ -87,4 +86,5 @@ void loop() {
 ```
 
 ***
-Thank you to [@olehs](https://github.com/olehs) for inspiring this library.
+Thank you to [@olehs](https://github.com/olehs) and [@mandulaj]https://github.com/mandulaj for inspiring this library.
+
