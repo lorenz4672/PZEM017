@@ -1,11 +1,11 @@
 #include <Arduino.h>
 
-#include "PZEM004Tv30.h"
+#include "PZEM017.h"
 
 /* Hardware Serial3 is only available on certain boards.
  * For example the Arduino MEGA 2560
 */
-PZEM004Tv30 pzem(&Serial3);
+PZEM017 pzem(&Serial3);
 
 void setup() {
   Serial.begin(115200);
