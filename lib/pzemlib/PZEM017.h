@@ -60,9 +60,9 @@ class PZEM017
 {
 public:
 #if defined(PZEM017_SOFTSERIAL)
-    PZEM017(uint8_t receivePin, uint8_t transmitPin, uint8_t addr=PZEM_DEFAULT_ADDR);
+    PZEM017(uint8_t receivePin, uint8_t transmitPin, uint8_t addr, uint16_t baud);
 #endif
-    PZEM017(HardwareSerial* port, uint8_t addr=PZEM_DEFAULT_ADDR);
+    PZEM017(HardwareSerial* port, uint8_t addr, uint16_t baud);
     ~PZEM017();
 
 

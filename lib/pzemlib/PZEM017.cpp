@@ -50,7 +50,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define RESPONSE_SIZE 32
 #define READ_TIMEOUT 200
 
-#define PZEM_BAUD_RATE 9600
+//#define PZEM_BAUD_RATE 9400
 //#define DEBUGMODE
 
 extern HardwareSerial Serial3;
@@ -66,10 +66,10 @@ extern HardwareSerial Serial3;
  * @param addr Slave address of device
 */
 #if defined(PZEM017_SOFTSERIAL)
-PZEM017::PZEM017(uint8_t receivePin, uint8_t transmitPin, uint8_t addr)
+PZEM017::PZEM017(uint8_t receivePin, uint8_t transmitPin, uint8_t addr,uint16_t baud)
 {
     SoftwareSerial *port = new SoftwareSerial(receivePin, transmitPin);
-    port->begin(PZEM_BAUD_RATE);
+    port->begin(baud);
     this->_serial = port;
     this->_isSoft = true;
     init(addr);
@@ -84,9 +84,9 @@ PZEM017::PZEM017(uint8_t receivePin, uint8_t transmitPin, uint8_t addr)
  * @param port Hardware serial to use
  * @param addr Slave address of device
 */
-PZEM017::PZEM017(HardwareSerial* port, uint8_t addr)
+PZEM017::PZEM017(HardwareSerial* port, uint8_t addr,uint16_t baud)
 {
-    port->begin(PZEM_BAUD_RATE,SERIAL_8N2);
+    port->begin(baud,SERIAL_8N2);
     this->_serial = port;
     this->_isSoft = false;
     init(addr);
@@ -221,8 +221,15 @@ bool PZEM017::sendCmd8(uint8_t cmd, uint16_t rAddr, uint16_t val, bool check, ui
     if((slave_addr == 0xFFFF) ||
        (slave_addr < 0x01) ||
        (slave_addr > 0xF7)){
-        slave_addr = _addr;
+       
+       slave_addr = _addr;
     }
+    else
+    {
+         slave_addr=PZEM_DEFAULT_ADDR;
+        
+    }
+    
 
     sendBuffer[0] = slave_addr;                   // Set slave address
     sendBuffer[1] = cmd;                     // Set command
@@ -346,7 +353,7 @@ bool PZEM017::setLOWVoltageAlarm(uint16_t volt)
 }
 bool PZEM017::setCurrentShunt(uint16_t shuntValue)
 {
-        if(!sendCmd8(CMD_RSR, WREG_CURRENT_RANGE,shuntValue, true))
+        if(!sendCmd8(CMD_WSR, WREG_CURRENT_RANGE,shuntValue, true,_addr))
         return false;
 
     Serial.println("Set Shunt Value");
@@ -357,7 +364,8 @@ bool PZEM017::getSlaveParameters()
     Serial.println("SlaveParameters:");
     static uint8_t responseParameter[15];
     sendCmd8(CMD_RSR, 0x00, 0x04, false);
-    recieve(responseParameter,13);
+    if(recieve(responseParameter,13)>0)
+    {
     _currentParameters.HIVoltTHR =  ((uint32_t)responseParameter[3] << 8 | // Raw voltage in 0.1V
                                     (uint32_t)responseParameter[4])/100.0;
     _currentParameters.LOWVoltTHR =  ((uint32_t)responseParameter[5] << 8 | // Raw voltage in 0.1V
@@ -366,7 +374,19 @@ bool PZEM017::getSlaveParameters()
                                     (uint32_t)responseParameter[8]);
     _currentParameters.SHUNT_VAL =  ((uint32_t)responseParameter[9] << 8 | // Raw voltage in 0.1V
                                     (uint32_t)responseParameter[10]);
-
+    }else
+    {
+        
+        for(int i=0;i<14;i++)
+        {
+            responseParameter[i]=0;
+        }
+        
+                _currentParameters.HIVoltTHR=0x00;
+    _currentParameters.LOWVoltTHR=0.00;       
+    _currentParameters.MODBUS_ADDR=0.00; 
+    _currentParameters.SHUNT_VAL=0.00;     
+    }
      Serial.print("HighVoltageThreshold: "); 
     Serial.print(_currentParameters.HIVoltTHR); 
     Serial.println("V");
@@ -381,7 +401,10 @@ bool PZEM017::getSlaveParameters()
 
     Serial.print("Current Shunt: "); 
     printHex(_currentParameters.SHUNT_VAL,4); 
-    Serial.println("");                                       
+    Serial.println(""); 
+
+    
+                                          
     return true;
 }
 /*!
@@ -410,9 +433,13 @@ bool PZEM017::getPowerAlarm()
  * @return success
 */
 void PZEM017::init(uint8_t addr){
-    if(addr < 0x01 || addr > 0xF8) // Sanity check of address
-        addr = PZEM_DEFAULT_ADDR;
-    _addr = addr;
+    if(addr > 0x01 || addr < 0xF8) // Sanity check of address
+    {
+         _addr = addr;
+    }
+   
+        //addr = PZEM_DEFAULT_ADDR;
+    
 
     // Set initial lastRed time so that we read right away
     _lastRead = 0;
@@ -514,6 +541,10 @@ bool PZEM017::resetEnergy(){
 */
 uint16_t PZEM017::recieve(uint8_t *resp, uint16_t len)
 {
+        for(int i=0;i<len;i++)
+        {
+            resp[i]=0;
+        }
     //Serial.println(*resp);
     #ifdef PZEM017_SOFTSERIAL
         if(_isSoft)
@@ -672,12 +703,14 @@ uint16_t PZEM017::CRC16(const uint8_t *data, uint16_t len)
 */
 void PZEM017::search(){
 #if ( not defined(PZEM017T_DISABLE_SEARCH))
-    static uint8_t response[7];
-    for(uint16_t addr = 0x01; addr <= 0xF8; addr++){
+    static uint8_t response[25];
+    for(uint16_t addr = 0x00; addr <= 0xF8; addr++){
         //Serial.println(addr);
-        sendCmd8(CMD_RIR, 0x00, 0x01, false, addr);
+        //sendCmd8(CMD_RIR, 0x00, 0x01, false, addr);
+            sendCmd8(CMD_RIR, 0x00, 0x08, false);
 
-        if(recieve(response, 7) != 7){ // Something went wrong
+
+        if(recieve(response, 21)!=21){ // Something went wrong
             continue;
         } else {
 
