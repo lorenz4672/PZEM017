@@ -574,7 +574,6 @@ uint16_t PZEM017::recieve(uint8_t *resp, uint16_t len)
         Serial.println("CRC Error");
         return 0;
     }
-
     return index;
 }
 

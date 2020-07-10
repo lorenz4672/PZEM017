@@ -18,7 +18,7 @@ int value = 0;
  * For example the Arduino MEGA 2560
 */
 
-PZEM017 pzem1(5,4,0x02,9500);
+PZEM017 pzem1(5,4,0x02,9400);
 PZEM017 pzem2(5,4,0x01,9400);
 void setup_wifi() {
     delay(10);
@@ -79,9 +79,9 @@ StaticJsonBuffer<300> JSONbuffer;
     //pzem.setLOWVoltageAlarm(10);
     //pzem1.getSlaveParameters();
     //delay(1000);
-        pzem2.getSlaveParameters();
+        //pzem2.getSlaveParameters();
         
-
+Serial.println("---------Battery Power------------");
     float voltage = pzem1.voltage();
     if(!isnan(voltage)){
         Serial.print("Voltage: "); 
@@ -102,7 +102,7 @@ StaticJsonBuffer<300> JSONbuffer;
         Serial.println("Error reading current");
     }
 
-    float power = pzem1.power();
+    float power = pzem1.power()*10;
     if(!isnan(power)){
         Serial.print("Power: "); 
         Serial.print(power); 
@@ -130,8 +130,9 @@ StaticJsonBuffer<300> JSONbuffer;
         Serial.println("UnderVoltage");
     }
 //---------
-Serial.println("---------------------");
-delay(1000);
+
+Serial.println("---------Solar Power------------");
+delay(2000);
     float voltage2 = pzem2.voltage();
     if(!isnan(voltage2)){
         Serial.print("Voltage: "); 
@@ -181,7 +182,7 @@ delay(1000);
     }
     Serial.println();
 //built JSON    
-      char JSONmessageBuffer[300];
+  char JSONmessageBuffer[300];
   JSONencoder.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
   Serial.println("Sending message to MQTT topic..");
   Serial.println(JSONmessageBuffer);
@@ -189,9 +190,9 @@ delay(1000);
     if (!client.connected()) {
         reconnect();
     }
-    client.loop();
- 
-    client.publish("test", JSONmessageBuffer);
+    //client.loop();
+    
+    client.publish("/power", JSONmessageBuffer);
 
     delay(2000);
 }
