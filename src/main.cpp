@@ -153,7 +153,7 @@ delay(2000);
         Serial.println("Error reading current");
     }
 
-    float power2 = pzem2.power();
+    float power2 = pzem2.power()*10;
     if(!isnan(power2)){
         Serial.print("Power: "); 
         Serial.print(power2); 
